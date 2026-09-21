@@ -726,6 +726,25 @@
     return rows;
   }
 
+  function pairForCompare(captured, pasteText, currentResults) {
+    var imported = null;
+    try {
+      if (pasteText) imported = parseSnapshot(pasteText);
+    } catch (e) {
+      imported = null;
+    }
+    var fresh = snapshotFromResults(currentResults || []);
+    var pasteIsEcho =
+      captured &&
+      imported &&
+      same(captured.fields, imported.fields) &&
+      same(captured.randomized || [], imported.randomized || []);
+    return {
+      a: captured || null,
+      b: imported && !pasteIsEcho ? imported : fresh
+    };
+  }
+
   function randomId() {
     var s = "";
     for (var i = 0; i < 16; i++) s += ((Math.random() * 16) | 0).toString(16);
@@ -883,7 +902,7 @@
     { mode: "real", note: "API returns the device value" },
     { mode: "bucketed", note: "deviceMemory, some sizes rounded to a set" },
     { mode: "randomized", note: "noise or farbling; value may change across sessions" },
-    { mode: "partitioned", note: "storage / some IDs scoped to origin or top-level site" },
+    { mode: "origin-partitioned", note: "storage / some IDs scoped to origin or top-level site" },
     { mode: "permission", note: "mic, camera, precise location wait for a grant" },
     { mode: "blocked", note: "API missing, throws, or extension withheld" }
   ];
@@ -917,6 +936,7 @@
     encodeSnapshot: encodeSnapshot,
     parseSnapshot: parseSnapshot,
     diffSnapshots: diffSnapshots,
+    pairForCompare: pairForCompare,
     networkPayload: networkPayload,
     buildAliExpressGraph: buildAliExpressGraph,
     startAliExpress: startAliExpress,

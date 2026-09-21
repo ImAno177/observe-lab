@@ -379,6 +379,118 @@ async function main() {
     assert.strictEqual(changed[0].state, "changed");
   });
 
+  await test("Capture then resize Screen Compare marks viewport changed even if paste echoes capture", function () {
+    var FP = load("core.js").window.FP;
+    function screenEnv(w, h) {
+      return {
+        screen: { width: 1920, height: 1080, availWidth: 1920, availHeight: 1040, colorDepth: 24 },
+        window: { devicePixelRatio: 2, innerWidth: w, innerHeight: h }
+      };
+    }
+    var before = FP.collectScreen(screenEnv(1280, 720));
+    var captured = FP.snapshotFromResults([before]);
+    var pasteEcho = FP.encodeSnapshot(captured);
+    var after = FP.collectScreen(screenEnv(800, 600));
+    var pair = FP.pairForCompare(captured, pasteEcho, [after]);
+    assert.ok(pair.a && pair.b, "pair");
+    var rows = FP.diffSnapshots(pair.a, pair.b);
+    var vw = rows.filter(function (r) {
+      return r.field === "screen.innerWidth";
+    })[0];
+    var vh = rows.filter(function (r) {
+      return r.field === "screen.innerHeight";
+    })[0];
+    assert.ok(vw, "innerWidth row");
+    assert.strictEqual(vw.state, "changed");
+    assert.strictEqual(vw.a, 1280);
+    assert.strictEqual(vw.b, 800);
+    assert.ok(vh);
+    assert.strictEqual(vh.state, "changed");
+  });
+
+  await test("pairForCompare uses imported paste when it differs from capture", function () {
+    var FP = load("core.js").window.FP;
+    function screenEnv(w, h) {
+      return {
+        screen: { width: 1920, height: 1080, availWidth: 1920, availHeight: 1040, colorDepth: 24 },
+        window: { devicePixelRatio: 2, innerWidth: w, innerHeight: h }
+      };
+    }
+    var captured = FP.snapshotFromResults([FP.collectScreen(screenEnv(1280, 720))]);
+    var imported = FP.snapshotFromResults([FP.collectScreen(screenEnv(1024, 768))]);
+    var live = FP.collectScreen(screenEnv(800, 600));
+    var pair = FP.pairForCompare(captured, FP.encodeSnapshot(imported), [live]);
+    assert.strictEqual(pair.b.fields["screen.innerWidth"], 1024);
+  });
+
+  await test("PROTECTION includes origin-partitioned and app.js renders it", function () {
+    var FP = load("core.js").window.FP;
+    var modes = [];
+    for (var i = 0; i < FP.PROTECTION.length; i++) modes.push(FP.PROTECTION[i].mode);
+    assert.ok(modes.indexOf("origin-partitioned") >= 0);
+    ["real", "bucketed", "randomized", "origin-partitioned", "permission", "blocked"].forEach(function (m) {
+      assert.ok(modes.indexOf(m) >= 0, m);
+    });
+    var html = fs.readFileSync(path.join(__dirname, "index.html"), "utf8");
+    assert.ok(html.indexOf('id="modes"') >= 0);
+    var els = {};
+    function el() {
+      return {
+        innerHTML: "",
+        textContent: "",
+        hidden: true,
+        disabled: false,
+        value: "",
+        addEventListener: function () {},
+        classList: { toggle: function () {} }
+      };
+    }
+    var core = load("core.js");
+    var window = core.window;
+    window.FP = core.window.FP;
+    window.document = {
+      readyState: "complete",
+      addEventListener: function () {},
+      getElementById: function (id) {
+        if (!els[id]) els[id] = el();
+        return els[id];
+      },
+      querySelector: function () {
+        return el();
+      },
+      querySelectorAll: function () {
+        return [];
+      },
+      createElement: function () {
+        return {};
+      }
+    };
+    window.addEventListener = function () {};
+    window.location = { protocol: "https:", pathname: "/observe-lab/" };
+    window.navigator = { userAgent: "Chrome/120", hardwareConcurrency: 8, deviceMemory: 8 };
+    window.screen = { width: 1920, height: 1080 };
+    window.devicePixelRatio = 2;
+    window.innerWidth = 1200;
+    window.innerHeight = 800;
+    var ctx = {
+      window: window,
+      document: window.document,
+      navigator: window.navigator,
+      screen: window.screen,
+      console: console,
+      location: window.location,
+      FP: window.FP,
+      setTimeout: setTimeout,
+      clearTimeout: clearTimeout
+    };
+    vm.createContext(ctx);
+    vm.runInContext(fs.readFileSync(path.join(__dirname, "app.js"), "utf8"), ctx);
+    assert.ok(els.modes, "modes el");
+    assert.ok(els.modes.innerHTML.indexOf("origin-partitioned") >= 0, els.modes.innerHTML);
+    assert.ok(els.modes.innerHTML.indexOf("bucketed") >= 0);
+    assert.ok(els.legend.innerHTML.indexOf("Observed") >= 0);
+  });
+
   await test("AliExpress topology + no auto-start + gain 0 + destination", function () {
     var ctx = load("core.js");
     var FP = ctx.window.FP;

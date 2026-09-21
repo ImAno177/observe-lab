@@ -263,12 +263,12 @@
   }
 
   function renderLegend() {
-    $("legend").innerHTML =
-      "<ul>" +
-      FP.STATUSES.map(function (s) {
-        return "<li>" + chip(s) + "<b>" + esc(STATUS_GLOSS[s] || "") + "</b></li>";
-      }).join("") +
-      "</ul>";
+    $("legend").innerHTML = FP.STATUSES.map(function (s) {
+      return "<li>" + chip(s) + "<b>" + esc(STATUS_GLOSS[s] || "") + "</b></li>";
+    }).join("");
+    $("modes").innerHTML = FP.PROTECTION.map(function (p) {
+      return "<li><b>" + esc(p.mode) + "</b> " + esc(p.note) + "</li>";
+    }).join("");
   }
 
   function aliFacts(rec) {
@@ -349,27 +349,21 @@
     });
 
     $("snap-compare").addEventListener("click", function () {
-      var a = lastSnap;
+      var captured = lastSnap;
       try {
-        if (!a) a = FP.parseSnapshot(localStorage.getItem("observe-snap") || "");
+        if (!captured) captured = FP.parseSnapshot(localStorage.getItem("observe-snap") || "");
       } catch (e) {
-        a = null;
+        captured = null;
       }
-      var b;
-      try {
-        b = FP.parseSnapshot($("snap-paste").value);
-      } catch (e2) {
-        b = FP.snapshotFromResults(
-          Object.keys(results).map(function (k) {
-            return results[k];
-          })
-        );
-      }
-      if (!a || !a.fields) {
+      var current = Object.keys(results).map(function (k) {
+        return results[k];
+      });
+      var pair = FP.pairForCompare(captured, $("snap-paste").value, current);
+      if (!pair.a || !pair.a.fields) {
         $("diff-out").innerHTML = '<p class="empty">Capture first.</p>';
         return;
       }
-      var rows = FP.diffSnapshots(a, b);
+      var rows = FP.diffSnapshots(pair.a, pair.b);
       if (!rows.length) {
         $("diff-out").innerHTML = '<p class="empty">No fields.</p>';
         return;
