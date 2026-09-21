@@ -4,9 +4,58 @@
 
   var results = {};
   var lastSnap = null;
-  var activeId = null;
+  var pane = "home";
   var pointerTimer = null;
   var pointerEvents = [];
+
+  var TITLES = {
+    canvas: "Canvas",
+    webgl: "WebGL",
+    screen: "Screen",
+    hardware: "CPU / RAM",
+    fonts: "Fonts",
+    css: "CSS media",
+    webaudio: "WebAudio",
+    webrtc: "WebRTC",
+    pointer: "Pointer",
+    aliexpress: "Silent graph",
+    diff: "Diff",
+    net: "Network"
+  };
+  var BLURBS = {
+    canvas: "2D raster",
+    webgl: "GPU renderer",
+    screen: "viewport · DPR",
+    hardware: "cores · memory",
+    fonts: "installed families",
+    css: "prefers-*",
+    webaudio: "sampleRate",
+    webrtc: "ICE / mDNS",
+    pointer: "mouse · scroll",
+    aliexpress: "gain = 0",
+    diff: "snapshot",
+    net: "outbound"
+  };
+  var CITE = {
+    canvas: "Mowery & Shacham, Pixel Perfect, W2SP 2012 — GPU/OS raster differences.",
+    webgl: "Cao, Li, Wijesekera, WWW 2017 — renderer string is the high-entropy bit.",
+    screen: "Joiner. Viewport changes on resize; screen size usually does not.",
+    hardware: "Chrome buckets deviceMemory to 0.25–8 GB (Laperdrix et al., TWEB 2020).",
+    fonts: "Eckersley, PETS 2010 — font lists were among the strongest early signals.",
+    css: "Media queries are coarse. Useful only with other signals.",
+    webaudio: "Queiroz et al. 2021 — audio hashes can be fickle. Not strong on every engine.",
+    webrtc: "Modern engines mDNS-host candidates. Empty iceServers here: no STUN.",
+    pointer: "Behavioral, not an identifier. maxTouchPoints is the stable bit.",
+    aliexpress: "Ars 2026-08. Destination connected at gain 0 can hold the OS audio path."
+  };
+  var STATUS_GLOSS = {
+    Observed: "API returned a value",
+    Inferred: "not a direct read",
+    Randomized: "noise added",
+    Blocked: "missing or refused",
+    "Permission required": "needs a grant",
+    Sent: "left this device"
+  };
 
   function $(id) {
     return document.getElementById(id);
@@ -24,7 +73,7 @@
       .replace(/>/g, "&gt;");
   }
 
-  function fmtLearned(v) {
+  function fmt(v) {
     if (v == null || v === "") return "—";
     if (typeof v === "object") return esc(JSON.stringify(v, null, 2));
     return esc(String(v));
@@ -33,122 +82,94 @@
   function renderSummary() {
     var s = FP.summarize(window);
     var mem = s.memory == null ? "—" : s.memory + " GB";
-    var cores = s.cores == null ? "—" : s.cores;
-    var dpr = s.dpr == null ? "—" : s.dpr;
-    var screen = s.screen[0] && s.screen[1] ? s.screen[0] + "×" + s.screen[1] : "—";
-    var view = s.viewport[0] && s.viewport[1] ? s.viewport[0] + "×" + s.viewport[1] : "—";
     $("summary").innerHTML =
       cell(s.family, "browser") +
-      cell(screen, "screen") +
-      cell(view, "viewport") +
-      cell(dpr, "dpr") +
-      cell(cores, "cores") +
-      cell(mem, "memory");
+      cell(s.screen[0] && s.screen[1] ? s.screen[0] + "×" + s.screen[1] : "—", "screen") +
+      cell(s.viewport[0] && s.viewport[1] ? s.viewport[0] + "×" + s.viewport[1] : "—", "view") +
+      cell(s.dpr == null ? "—" : s.dpr, "dpr") +
+      cell(s.cores == null ? "—" : s.cores, "cores") +
+      cell(mem, "ram");
   }
 
   function cell(v, k) {
     return "<div><b>" + esc(v) + "</b><span>" + k + "</span></div>";
   }
 
-  var TITLES = {
-    canvas: "Canvas",
-    webgl: "WebGL",
-    screen: "Screen / viewport",
-    hardware: "CPU / memory",
-    fonts: "Fonts",
-    css: "CSS media",
-    webaudio: "WebAudio",
-    webrtc: "WebRTC",
-    pointer: "Pointer / scroll",
-    aliexpress: "AliExpress graph"
-  };
-  var BLURBS = {
-    canvas: "2D raster",
-    webgl: "GPU renderer",
-    screen: "viewport + DPR",
-    hardware: "core / RAM hints",
-    fonts: "installed families",
-    css: "prefers-* / pointer",
-    webaudio: "context props",
-    webrtc: "ICE / mDNS",
-    pointer: "mouse, scroll, touch"
-  };
-  var STATUS_GLOSS = {
-    Observed: "API returned a value",
-    Inferred: "not a direct read",
-    Randomized: "noise added",
-    Blocked: "missing or refused",
-    "Permission required": "needs a grant",
-    Sent: "left this device"
-  };
+  function railIds() {
+    return FP.collectorIds().concat(["aliexpress", "diff", "net"]);
+  }
 
   function listHtml() {
-    return FP.collectorIds()
+    return railIds()
       .map(function (id) {
         var r = results[id];
-        var statusChip = r ? chip(r.status) : "";
-        var on = id === activeId ? " is-on" : "";
+        var on = pane === id ? " is-on" : "";
+        var run = FP.collectorIds().indexOf(id) >= 0 ? ' data-run="' + id + '"' : "";
         return (
           '<button type="button" class="exp' +
           on +
           '" data-id="' +
           id +
-          '" data-run="' +
-          id +
-          '" aria-controls="detail" aria-expanded="' +
-          (id === activeId ? "true" : "false") +
-          '"><span class="exp-name">' +
+          '"' +
+          run +
+          '><span class="exp-name">' +
           esc(TITLES[id] || id) +
           '</span><span class="exp-blurb">' +
           esc(BLURBS[id] || "") +
           "</span>" +
-          statusChip +
-          '<span class="exp-go">' +
-          (r ? "Again" : "Run") +
-          "</span></button>"
+          (r && r.status ? chip(r.status) : "") +
+          "</button>"
         );
       })
       .join("");
   }
 
-  function placeDetail() {
-    var d = $("detail");
-    if (!d) return;
-    if (!activeId || !results[activeId]) {
-      d.hidden = true;
-      return;
-    }
-    var row = document.querySelector('.exp[data-id="' + activeId + '"]');
-    if (row) row.after(d);
-    d.hidden = false;
-  }
-
   function renderList() {
-    var d = $("detail");
-    var list = $("list");
-    if (d && d.parentNode === list) list.parentNode.appendChild(d);
-    list.innerHTML = listHtml();
-    placeDetail();
+    $("list").innerHTML = listHtml();
   }
 
-  function renderDetail(id) {
-    var r = results[id];
-    var el = $("detail");
-    activeId = id;
-    if (!r) {
-      el.hidden = true;
-      el.innerHTML = "";
-      return;
-    }
+  function homeHtml() {
+    var s = FP.summarize(window);
+    var ua = FP.uaFamily(window);
+    var rows = [
+      ["browser", s.family, ua.status],
+      ["screen", s.screen[0] + "×" + s.screen[1], "Observed"],
+      ["viewport", s.viewport[0] + "×" + s.viewport[1], "Observed"],
+      ["dpr", s.dpr, "Observed"],
+      ["cores", s.cores == null ? "—" : s.cores, s.cores == null ? "Blocked" : "Observed"],
+      ["memory", s.memory == null ? "—" : s.memory + " GB", s.memory == null ? "Blocked" : "Observed"],
+      ["language", s.language || "—", "Observed"]
+    ];
+    return (
+      '<p class="kicker">already known</p><h2>Harvest</h2>' +
+      "<p class=\"cite\">Any origin gets this on load — no click. Eckersley PETS 2010; Laperdrix et al. TWEB 2020. Alone these are joiners, not a uniqueness score.</p>" +
+      '<dl class="harvest">' +
+      rows
+        .map(function (row) {
+          return (
+            "<div><dt>" +
+            esc(row[0]) +
+            "</dt><dd>" +
+            esc(row[1] == null ? "—" : row[1]) +
+            "</dd>" +
+            chip(row[2]) +
+            "</div>"
+          );
+        })
+        .join("") +
+      "</dl>"
+    );
+  }
+
+  function detailHtml(r) {
     var rows = FP.DETAIL_FIELDS.map(function (k) {
       var wide = k === "learned" || k === "codeExecuted";
-      var val = r[k];
       var body =
         k === "learned" && r.learnedValue && typeof r.learnedValue === "object"
-          ? "<pre>" + fmtLearned(r.learnedValue) + "</pre>"
-          : "<div>" + fmtLearned(val) + "</div>";
+          ? "<pre>" + fmt(r.learnedValue) + "</pre>"
+          : "<div>" + fmt(r[k]) + "</div>";
       return (
-        '<div' +
+        "<div" +
         (wide ? ' class="wide"' : "") +
         "><dt>" +
         esc(FP.DETAIL_LABELS[k]) +
@@ -157,14 +178,36 @@
         "</dd></div>"
       );
     }).join("");
-    el.innerHTML =
-      "<h3>" +
+    return (
+      '<p class="kicker">signal</p><h2>' +
       esc(r.title) +
       " " +
       chip(r.status) +
-      '</h3><dl class="sheet-grid">' +
+      "</h2>" +
+      (CITE[r.id] ? '<p class="cite">' + esc(CITE[r.id]) + "</p>" : "") +
+      '<dl class="sheet-grid">' +
       rows +
-      "</dl>";
+      "</dl>"
+    );
+  }
+
+  function showPane(id) {
+    pane = id;
+    $("detail").hidden = !(id === "home" || (results[id] && FP.collectorIds().indexOf(id) >= 0));
+    $("aliexpress").hidden = id !== "aliexpress";
+    $("diff-pane").hidden = id !== "diff";
+    $("net-pane").hidden = id !== "net";
+    if (id === "home") $("detail").innerHTML = homeHtml();
+    else if (results[id] && FP.collectorIds().indexOf(id) >= 0) $("detail").innerHTML = detailHtml(results[id]);
+    else if (FP.collectorIds().indexOf(id) >= 0) {
+      $("detail").hidden = false;
+      $("detail").innerHTML =
+        '<p class="kicker">signal</p><h2>' +
+        esc(TITLES[id]) +
+        "</h2><p class=\"cite\">" +
+        esc(CITE[id] || "") +
+        '</p><p class="empty">Running…</p>';
+    }
     renderList();
   }
 
@@ -181,16 +224,12 @@
   }
 
   function run(id) {
-    var btn = document.querySelector('[data-run="' + id + '"]');
-    if (btn) {
-      btn.disabled = true;
-      var go = btn.querySelector(".exp-go");
-      if (go) go.textContent = "…";
-    }
+    showPane(id);
     if (id === "pointer") startPointer();
     return FP.runCollector(id, env()).then(function (r) {
       results[id] = r;
-      renderDetail(id);
+      if (pane === id) $("detail").innerHTML = detailHtml(r);
+      renderList();
     });
   }
 
@@ -219,21 +258,17 @@
       var sum = FP.summarizePointerEvents(pointerEvents);
       r.learnedValue = Object.assign({}, r.learnedValue, sum);
       r.learned = JSON.stringify(r.learnedValue);
-      if (activeId === "pointer") renderDetail("pointer");
-      else renderList();
+      if (pane === "pointer") $("detail").innerHTML = detailHtml(r);
     }, 2500);
   }
 
   function renderLegend() {
     $("legend").innerHTML =
-      '<ul class="tax-grid">' +
+      "<ul>" +
       FP.STATUSES.map(function (s) {
         return "<li>" + chip(s) + "<b>" + esc(STATUS_GLOSS[s] || "") + "</b></li>";
       }).join("") +
       "</ul>";
-    $("modes").innerHTML = FP.PROTECTION.map(function (p) {
-      return "<li><b>" + esc(p.mode) + "</b>" + esc(p.note) + "</li>";
-    }).join("");
   }
 
   function aliFacts(rec) {
@@ -271,35 +306,42 @@
   function boot() {
     if (location.protocol === "file:") $("file-hint").hidden = false;
     renderSummary();
-    renderList();
     renderLegend();
     showNet(FP.networkPayload());
     aliFacts();
+    showPane("home");
 
     $("list").addEventListener("click", function (e) {
-      var runBtn = e.target.closest("[data-run]");
-      if (runBtn) {
-        e.preventDefault();
-        run(runBtn.getAttribute("data-run"));
+      var btn = e.target.closest("[data-id]");
+      if (!btn) return;
+      var id = btn.getAttribute("data-id");
+      if (id === "aliexpress" || id === "diff" || id === "net") {
+        showPane(id);
+        return;
       }
+      run(id);
     });
 
     $("ali-start").addEventListener("click", function () {
       FP.startAliExpress(env()).then(function (rec) {
         if (rec && rec.id) results.aliexpress = rec;
         aliFacts(rec);
+        renderList();
       });
     });
     $("ali-stop").addEventListener("click", function () {
       FP.stopAliExpress();
+      delete results.aliexpress;
       aliFacts();
+      renderList();
     });
 
     $("snap-capture").addEventListener("click", function () {
-      var list = Object.keys(results).map(function (k) {
-        return results[k];
-      });
-      lastSnap = FP.snapshotFromResults(list);
+      lastSnap = FP.snapshotFromResults(
+        Object.keys(results).map(function (k) {
+          return results[k];
+        })
+      );
       try {
         localStorage.setItem("observe-snap", FP.encodeSnapshot(lastSnap));
       } catch (e) {}
@@ -333,7 +375,7 @@
         return;
       }
       $("diff-out").innerHTML =
-        '<div class="sheet"><table class="diff"><thead><tr><th>field</th><th>state</th><th>a</th><th>b</th></tr></thead><tbody>' +
+        '<table class="diff"><thead><tr><th>field</th><th>state</th><th>a</th><th>b</th></tr></thead><tbody>' +
         rows
           .map(function (r) {
             return (
@@ -351,7 +393,7 @@
             );
           })
           .join("") +
-        "</tbody></table></div>";
+        "</tbody></table>";
     });
 
     $("net-preview").addEventListener("click", function () {
@@ -367,6 +409,7 @@
 
     window.addEventListener("resize", function () {
       renderSummary();
+      if (pane === "home") $("detail").innerHTML = homeHtml();
     });
   }
 
