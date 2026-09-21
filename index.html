@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>OBSERVE — what this origin can read</title>
+    <meta name="description" content="Local-only demo of browser fingerprint signals. No score. No upload." />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="./app.css" />
+  </head>
+  <body>
+    <p id="file-hint" class="file-hint band band-cream" hidden>
+      file: origin — use a static server or GitHub Pages if something fails to load.
+    </p>
+
+    <header class="band band-orange">
+      <div class="wrap hero-row">
+        <div>
+          <p class="kicker">local-only · no score</p>
+          <h1>OBSERVE</h1>
+          <p class="lede">What this origin can read from your browser. Inference is labeled. Nothing is sent.</p>
+        </div>
+        <span class="pill">0 bytes outbound</span>
+      </div>
+      <div class="wrap readout" id="summary"></div>
+    </header>
+
+    <main>
+      <section class="band band-cream" aria-labelledby="ex-title">
+        <div class="wrap">
+          <p class="kicker">independent runs</p>
+          <h2 id="ex-title">Experiments</h2>
+          <div class="layout" style="margin-top: 24px">
+            <div>
+              <div class="list" id="list"></div>
+            </div>
+            <article class="panel" id="detail" aria-live="polite">
+              <p class="empty">Run an experiment.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="band band-orange" aria-labelledby="ali-title" id="aliexpress">
+        <div class="wrap">
+          <p class="kicker">case study · Aug 2026</p>
+          <h2 id="ali-title">Silent WebAudio graph</h2>
+          <p class="lede">AliExpress-style chain. No autoplay. Gain is zero. Destination is still connected.</p>
+          <p class="graph">oscillator → analyser → processor → gain=0 → destination</p>
+          <div class="btn-row">
+            <button class="btn" id="ali-start" type="button">Start</button>
+            <button class="btn btn-ghost" id="ali-stop" type="button" disabled>Stop</button>
+          </div>
+          <div class="facts" id="ali-facts">
+            <div><span>audible</span><b id="ali-audible">—</b></div>
+            <div><span>context</span><b id="ali-ctx">idle</b></div>
+            <div><span>destination</span><b id="ali-dest">disconnected</b></div>
+            <div><span>entropy</span><b id="ali-ent">untested</b></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="band band-cream" aria-labelledby="diff-title">
+        <div class="wrap layout">
+          <div>
+            <p class="kicker">local snapshot</p>
+            <h2 id="diff-title">Fingerprint diff</h2>
+            <div class="btn-row">
+              <button class="btn" id="snap-capture" type="button">Capture</button>
+              <button class="btn btn-ghost" id="snap-compare" type="button">Compare</button>
+            </div>
+            <p class="empty" style="margin-top: 12px">Reload, resize, or paste another browser / private mode.</p>
+            <label class="sr" for="snap-paste">Paste snapshot</label>
+            <textarea id="snap-paste" placeholder='{"ts":…,"fields":{…}}'></textarea>
+          </div>
+          <div class="panel" id="diff-out">
+            <p class="empty">No comparison yet.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="band band-cream" style="padding-top: 0" aria-labelledby="net-title">
+        <div class="wrap">
+          <p class="kicker">inspector</p>
+          <h2 id="net-title">Network</h2>
+          <div class="btn-row">
+            <button class="btn btn-ghost" id="net-preview" type="button">Preview opt-in payload</button>
+          </div>
+          <pre id="net-out">{ "sent": false, "payload": null, "bytes": 0 }</pre>
+        </div>
+      </section>
+
+      <section class="band band-orange" aria-labelledby="prot-title">
+        <div class="wrap">
+          <p class="kicker">taxonomy</p>
+          <h2 id="prot-title">How to read a status</h2>
+          <div class="legend" id="legend"></div>
+        </div>
+      </section>
+    </main>
+
+    <script src="./core.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
