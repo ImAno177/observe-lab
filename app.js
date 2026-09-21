@@ -36,18 +36,6 @@
     diff: "snapshot",
     net: "outbound"
   };
-  var CITE = {
-    canvas: "Mowery & Shacham, Pixel Perfect, W2SP 2012 — GPU/OS raster differences.",
-    webgl: "Cao, Li, Wijesekera, WWW 2017 — renderer string is the high-entropy bit.",
-    screen: "Joiner. Viewport changes on resize; screen size usually does not.",
-    hardware: "Chrome buckets deviceMemory to 0.25–8 GB (Laperdrix et al., TWEB 2020).",
-    fonts: "Eckersley, PETS 2010 — font lists were among the strongest early signals.",
-    css: "Media queries are coarse. Useful only with other signals.",
-    webaudio: "Queiroz et al. 2021 — audio hashes can be fickle. Not strong on every engine.",
-    webrtc: "Modern engines mDNS-host candidates. Empty iceServers here: no STUN.",
-    pointer: "Behavioral, not an identifier. maxTouchPoints is the stable bit.",
-    aliexpress: "Ars 2026-08. Destination connected at gain 0 can hold the OS audio path."
-  };
   var STATUS_GLOSS = {
     Observed: "API returned a value",
     Inferred: "not a direct read",
@@ -141,8 +129,7 @@
       ["language", s.language || "—", "Observed"]
     ];
     return (
-      '<p class="kicker">already known</p><h2>Harvest</h2>' +
-      '<p class="cite">On load, no click. Eckersley 2010 · Laperdrix 2020. Joiners, not a score.</p>' +
+      "<h2>Harvest</h2>" +
       '<dl class="harvest">' +
       rows
         .map(function (row) {
@@ -163,6 +150,8 @@
 
   function detailHtml(r) {
     var rows = FP.DETAIL_FIELDS.map(function (k) {
+      var label = FP.DETAIL_LABELS[k];
+      if (!label) return "";
       var wide = k === "learned" || k === "codeExecuted";
       var body =
         k === "learned" && r.learnedValue && typeof r.learnedValue === "object"
@@ -172,20 +161,18 @@
         "<div" +
         (wide ? ' class="wide"' : "") +
         "><dt>" +
-        esc(FP.DETAIL_LABELS[k]) +
+        esc(label) +
         "</dt><dd>" +
         body +
         "</dd></div>"
       );
     }).join("");
     return (
-      '<p class="kicker">signal</p><h2>' +
+      "<h2>" +
       esc(r.title) +
       " " +
       chip(r.status) +
-      "</h2>" +
-      (CITE[r.id] ? '<p class="cite">' + esc(CITE[r.id]) + "</p>" : "") +
-      '<dl class="sheet-grid">' +
+      '</h2><dl class="sheet-grid">' +
       rows +
       "</dl>"
     );
@@ -201,12 +188,7 @@
     else if (results[id] && FP.collectorIds().indexOf(id) >= 0) $("detail").innerHTML = detailHtml(results[id]);
     else if (FP.collectorIds().indexOf(id) >= 0) {
       $("detail").hidden = false;
-      $("detail").innerHTML =
-        '<p class="kicker">signal</p><h2>' +
-        esc(TITLES[id]) +
-        "</h2><p class=\"cite\">" +
-        esc(CITE[id] || "") +
-        '</p><p class="empty">Running…</p>';
+      $("detail").innerHTML = "<h2>" + esc(TITLES[id]) + '</h2><p class="empty">Running…</p>';
     }
     renderList();
   }

@@ -308,20 +308,36 @@ async function main() {
       [].slice.call(FP.DETAIL_FIELDS).join("|"),
       "codeExecuted|learned|stability|intervention|tracking|sideEffects|network"
     );
-    assert.strictEqual(FP.DETAIL_LABELS.codeExecuted, "Code executed");
-    assert.strictEqual(FP.DETAIL_LABELS.learned, "What the page learned");
-    assert.strictEqual(FP.DETAIL_LABELS.stability, "Stability");
-    assert.strictEqual(FP.DETAIL_LABELS.intervention, "Browser intervention");
-    assert.strictEqual(FP.DETAIL_LABELS.tracking, "Tracking usefulness");
-    assert.strictEqual(FP.DETAIL_LABELS.sideEffects, "Side effects");
-    assert.strictEqual(FP.DETAIL_LABELS.network, "Network");
+    assert.strictEqual(FP.DETAIL_LABELS.codeExecuted, "API");
+    assert.strictEqual(FP.DETAIL_LABELS.learned, "Got");
+    assert.strictEqual(FP.DETAIL_LABELS.stability, "");
+    assert.strictEqual(FP.DETAIL_LABELS.intervention, "Protect");
+    assert.strictEqual(FP.DETAIL_LABELS.tracking, "Use");
+    assert.strictEqual(FP.DETAIL_LABELS.sideEffects, "Cost");
+    assert.strictEqual(FP.DETAIL_LABELS.network, "Net");
+    assert.ok(FP.DETAIL_FIELDS.indexOf("stability") >= 0);
+    var visible = FP.DETAIL_FIELDS.map(function (k) {
+      return FP.DETAIL_LABELS[k];
+    }).filter(Boolean);
+    visible.forEach(function (l) {
+      assert.ok(l.split(/\s+/).length <= 2, l);
+      assert.notStrictEqual(l, "Stability");
+    });
+    var r = FP.collectHardware({ navigator: { hardwareConcurrency: 8, deviceMemory: 4 } });
+    var html = visible
+      .map(function (l) {
+        return l;
+      })
+      .join("|");
+    assert.ok(html.indexOf("API") >= 0);
+    assert.ok(r.stability);
   });
 
   await test("HTML has landing, list, seven labels, relative assets, no score copy", function () {
     var html = fs.readFileSync(path.join(__dirname, "index.html"), "utf8");
     assert.ok(html.indexOf('id="summary"') >= 0);
     assert.ok(html.indexOf('id="list"') >= 0);
-    assert.ok(html.indexOf("Code executed") >= 0 || html.indexOf("DETAIL_LABELS") >= 0 || html.indexOf("detail") >= 0);
+    assert.ok(html.indexOf("detail") >= 0);
     ["href=\"./app.css\"", "src=\"./core.js\"", "src=\"./app.js\""].forEach(function (s) {
       assert.ok(html.indexOf(s) >= 0, s);
     });

@@ -22,13 +22,13 @@
   ];
 
   var DETAIL_LABELS = {
-    codeExecuted: "Code executed",
-    learned: "What the page learned",
-    stability: "Stability",
-    intervention: "Browser intervention",
-    tracking: "Tracking usefulness",
-    sideEffects: "Side effects",
-    network: "Network"
+    codeExecuted: "API",
+    learned: "Got",
+    stability: "",
+    intervention: "Protect",
+    tracking: "Use",
+    sideEffects: "Cost",
+    network: "Net"
   };
 
   var MEMORY_BUCKETS = [0.25, 0.5, 1, 2, 4, 8];
