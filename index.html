@@ -14,7 +14,6 @@
 
     <header class="top">
       <div class="brand">
-        <p class="kicker">playground · local-only · no score</p>
         <h1>OBSERVE</h1>
       </div>
       <div class="meter" id="summary"></div>
@@ -28,9 +27,7 @@
         <article id="detail"></article>
 
         <div id="aliexpress" hidden>
-          <p class="kicker">case · Aug 2026</p>
           <h2 id="ali-title">Silent graph</h2>
-          <p class="cite">Callaghan / Ars 2026-08 — AliExpress kept AudioContext.destination live at gain 0; Bluetooth multipoint stuck on the PC.</p>
           <ol class="chain" aria-label="oscillator to destination">
             <li>oscillator</li>
             <li>analyser</li>
@@ -51,20 +48,17 @@
         </div>
 
         <div id="diff-pane" hidden>
-          <p class="kicker">local</p>
           <h2 id="diff-title">Diff</h2>
           <div class="btn-row">
             <button class="btn" id="snap-capture" type="button">Capture</button>
             <button class="btn btn-ghost" id="snap-compare" type="button">Compare</button>
           </div>
-          <p class="hint">Reload, resize, or paste another browser.</p>
           <label class="sr" for="snap-paste">Paste snapshot</label>
           <textarea id="snap-paste" placeholder='{"ts":…,"fields":{…}}'></textarea>
           <div id="diff-out"><p class="empty">Capture, then Compare.</p></div>
         </div>
 
         <div id="net-pane" hidden>
-          <p class="kicker">inspector</p>
           <h2 id="net-title">Network</h2>
           <div class="btn-row">
             <button class="btn btn-ghost" id="net-preview" type="button">Preview opt-in payload</button>
