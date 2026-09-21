@@ -109,10 +109,10 @@
       learned: "unavailable",
       learnedValue: null,
       stability: "n/a",
-      intervention: why.intervention || "API missing or threw",
-      tracking: "none from this origin",
+      intervention: why.intervention || "missing",
+      tracking: "none",
       sideEffects: why.side || "none",
-      network: "nothing left this device"
+      network: "0 B"
     });
   }
 
@@ -125,10 +125,10 @@
       learned: "not read",
       learnedValue: null,
       stability: "n/a",
-      intervention: "origin must ask",
-      tracking: "none until granted",
-      sideEffects: "permission prompt",
-      network: "nothing left this device"
+      intervention: "ask",
+      tracking: "none",
+      sideEffects: "prompt",
+      network: "0 B"
     });
   }
 
@@ -225,13 +225,11 @@
         codeExecuted: code,
         learned: "raster " + a.url.length + "B digest " + djb2(a.url),
         learnedValue: { bytes: a.url.length, digest: djb2(a.url) },
-        stability: "often stable per GPU/OS; private mode may differ",
-        intervention: randomized
-          ? "two draws differed in this session"
-          : "Chrome usually raw; Firefox/Safari/Brave may farble or block across sessions",
-        tracking: "high entropy when stable; weak if farbled",
-        sideEffects: "CPU raster; no permission",
-        network: "nothing left this device"
+        stability: "GPU/OS",
+        intervention: randomized ? "noisy now" : "may farble",
+        tracking: "high if stable",
+        sideEffects: "CPU",
+        network: "0 B"
       });
     } catch (e) {
       if (isDenied(e)) return permission(id, title, { code: code });
@@ -268,13 +266,11 @@
         codeExecuted: code,
         learned: json({ vendor: vendor, renderer: renderer, unmasked: unmasked }),
         learnedValue: { vendor: vendor, renderer: renderer, unmasked: unmasked },
-        stability: "stable per GPU driver; restart rarely changes",
-        intervention: ext
-          ? "unmasked renderer exposed — Firefox/Brave may withhold this extension"
-          : "debug_renderer_info withheld",
-        tracking: "unmasked renderer is high entropy; generic vendor string is low",
-        sideEffects: "GPU init",
-        network: "nothing left this device"
+        stability: "per GPU",
+        intervention: ext ? "unmasked" : "masked",
+        tracking: "high if unmasked",
+        sideEffects: "GPU",
+        network: "0 B"
       });
     } catch (e) {
       if (isDenied(e)) return permission(id, title, { code: code });
@@ -307,11 +303,11 @@
         codeExecuted: code,
         learned: json(learned),
         learnedValue: learned,
-        stability: "screen size: reload/restart stable; viewport: changes on resize",
-        intervention: "some browsers round window size; DPR usually exact",
-        tracking: "medium alone; strong with GPU/OS",
+        stability: "viewport moves",
+        intervention: "size may round",
+        tracking: "joiner",
         sideEffects: "none",
-        network: "nothing left this device"
+        network: "0 B"
       });
     } catch (e) {
       return blocked(id, title, { code: code, intervention: String(e.message || e) });
@@ -337,13 +333,11 @@
         codeExecuted: code,
         learned: json(learned),
         learnedValue: learned,
-        stability: "stable across reload/resize; private mode may spoof",
-        intervention: memBucket
-          ? "deviceMemory matches Chrome bucket set (0.25–8) — may be bucketed, not raw RAM. Firefox/Safari often omit. Brave may farble."
-          : "deviceMemory omitted or non-bucket; cores may still be spoofed under resist-fingerprinting",
-        tracking: "low–medium; a joining signal",
+        stability: "stable",
+        intervention: memBucket ? "memory bucketed" : "cores may spoof",
+        tracking: "joiner",
         sideEffects: "none",
-        network: "nothing left this device"
+        network: "0 B"
       });
     } catch (e) {
       return blocked(id, title, { code: code, intervention: String(e.message || e) });
@@ -383,11 +377,11 @@
         codeExecuted: code,
         learned: present.length + " / " + FONT_PROBE.length + " " + present.join(", "),
         learnedValue: { present: present, probed: FONT_PROBE.length },
-        stability: "stable until fonts install/uninstall; private mode usually same",
-        intervention: "Firefox RFP may report a small generic set; Chrome usually real",
-        tracking: "high on desktop with many fonts; low on locked-down mobile",
-        sideEffects: "CPU measure; no permission",
-        network: "nothing left this device"
+        stability: "until install",
+        intervention: "RFP may shrink",
+        tracking: "high on desktop",
+        sideEffects: "CPU",
+        network: "0 B"
       });
     } catch (e) {
       if (isDenied(e)) return permission(id, title, { code: code });
@@ -415,11 +409,11 @@
         codeExecuted: code,
         learned: hits.length ? hits.join("; ") : "no listed queries matched",
         learnedValue: { matches: hits },
-        stability: "scheme/motion stable per profile; hover/pointer change with input device",
-        intervention: "rarely randomized; may follow OS appearance",
-        tracking: "low alone; joins with screen/pointer",
+        stability: "per profile",
+        intervention: "rarely noisy",
+        tracking: "joiner",
         sideEffects: "none",
-        network: "nothing left this device"
+        network: "0 B"
       });
     } catch (e) {
       return blocked(id, title, { code: code, intervention: String(e.message || e) });
@@ -450,13 +444,11 @@
         codeExecuted: code,
         learned: json(learned),
         learnedValue: learned,
-        stability: "sampleRate stable per device; latency may jitter",
-        intervention: coarse
-          ? "sampleRate is a coarse bucket (44.1/48 kHz). Analyser hashes are weakened or noise-added on several engines — not a strong fingerprint everywhere."
-          : "sampleRate outside common buckets",
-        tracking: "low–medium today; do not treat as globally high entropy",
-        sideEffects: "may wake audio subsystem even without a graph",
-        network: "nothing left this device"
+        stability: "rate stable",
+        intervention: coarse ? "rate bucketed" : "rate odd",
+        tracking: "weak",
+        sideEffects: "may wake audio",
+        network: "0 B"
       });
     } catch (e) {
       if (isDenied(e)) return permission(id, title, { code: code });
@@ -499,11 +491,11 @@
             codeExecuted: code,
             learned: json({ count: candidates.length, types: types }),
             learnedValue: { count: candidates.length, types: types, raw: candidates },
-            stability: "mdns names may rotate; host IPs leak only on older stacks",
-            intervention: "modern Chrome/Firefox/Safari mDNS-host candidates; no STUN used here so no extra network",
-            tracking: "low with mDNS; historically high when host IPs leaked",
-            sideEffects: "ICE gathering on this origin only",
-            network: "nothing left this device (iceServers empty)"
+            stability: "mDNS rotates",
+            intervention: "no STUN",
+            tracking: "low",
+            sideEffects: "ICE",
+            network: "0 B"
           })
         );
       }
@@ -568,11 +560,11 @@
         codeExecuted: code,
         learned: json(learned),
         learnedValue: learned,
-        stability: "capabilities stable; movement samples change every gesture",
-        intervention: "touch points usually real; hover may follow primary input",
-        tracking: "low; behavioral, not an identifier",
-        sideEffects: "listens while Run is active",
-        network: "nothing left this device"
+        stability: "gesture changes",
+        intervention: "touch real",
+        tracking: "behavior",
+        sideEffects: "listen",
+        network: "0 B"
       });
     } catch (e) {
       return blocked(id, title, { code: code, intervention: String(e.message || e) });
@@ -862,13 +854,11 @@
             sampleRate: ctx.sampleRate,
             gain: 0
           },
-          stability: "graph exists only after Start; reload drops it",
-          intervention: coarse
-            ? "sampleRate bucketed; analyser fingerprint entropy is reduced on many browsers"
-            : "sampleRate reported",
-          tracking: "do not treat WebAudio as a strong fingerprint on every browser",
-          sideEffects: "silent but live graph to destination — may wake audio/Bluetooth on some OS",
-          network: "nothing left this device"
+          stability: "until Stop",
+          intervention: coarse ? "rate bucketed" : "rate odd",
+          tracking: "weak",
+          sideEffects: "may wake BT",
+          network: "0 B"
         });
       });
     } catch (e) {

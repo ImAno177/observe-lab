@@ -37,12 +37,12 @@
     net: "outbound"
   };
   var STATUS_GLOSS = {
-    Observed: "API returned a value",
-    Inferred: "not a direct read",
-    Randomized: "noise added",
-    Blocked: "missing or refused",
-    "Permission required": "needs a grant",
-    Sent: "left device"
+    Observed: "value",
+    Inferred: "derived",
+    Randomized: "noise",
+    Blocked: "refused",
+    "Permission required": "ask",
+    Sent: "left"
   };
 
   function $(id) {
@@ -279,7 +279,7 @@
 
   function showNet(p) {
     if (!p || !p.payload) {
-      $("net-out").textContent = "0 bytes left this device";
+      $("net-out").textContent = "0 B";
       return;
     }
     $("net-out").textContent = JSON.stringify(p, null, 2);
