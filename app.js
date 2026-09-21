@@ -54,7 +54,7 @@
     Randomized: "noise added",
     Blocked: "missing or refused",
     "Permission required": "needs a grant",
-    Sent: "left this device"
+    Sent: "left device"
   };
 
   function $(id) {
@@ -142,7 +142,7 @@
     ];
     return (
       '<p class="kicker">already known</p><h2>Harvest</h2>' +
-      "<p class=\"cite\">Any origin gets this on load — no click. Eckersley PETS 2010; Laperdrix et al. TWEB 2020. Alone these are joiners, not a uniqueness score.</p>" +
+      '<p class="cite">On load, no click. Eckersley 2010 · Laperdrix 2020. Joiners, not a score.</p>' +
       '<dl class="harvest">' +
       rows
         .map(function (row) {

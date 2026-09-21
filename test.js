@@ -333,10 +333,15 @@ async function main() {
     assert.ok(html.indexOf("Start") >= 0);
     assert.ok(html.indexOf("oscillator") >= 0);
     var css = fs.readFileSync(path.join(__dirname, "app.css"), "utf8");
-    assert.ok(css.indexOf("#cc8800") >= 0 || css.indexOf("#CC8800") >= 0);
-    assert.ok(/Chakra Petch/.test(css));
-    assert.ok(/JetBrains Mono/.test(css));
-    assert.ok(/#c55221/i.test(css));
+    assert.ok(!/#cc8800/i.test(css));
+    assert.ok(!/#c55221/i.test(css));
+    assert.ok(!/#f4e6d4/i.test(css));
+    assert.ok(!/Chakra Petch/.test(css));
+    assert.ok(!/JetBrains Mono/.test(css));
+    assert.ok(/--lamp:\s*#0a4f4c/i.test(css));
+    assert.ok(/--bench:\s*#c5d4dc/i.test(css));
+    assert.ok(/Sora/.test(css));
+    assert.ok(/IBM Plex Mono/.test(css));
   });
 
   await test("default network payload is empty and not sent", function () {
@@ -652,6 +657,18 @@ async function main() {
     assert.ok(css.indexOf('url("./fonts/') >= 0);
     assert.ok(css.indexOf("url(/") === -1);
     assert.ok(fs.existsSync(path.join(__dirname, ".nojekyll")));
+    assert.ok(fs.existsSync(path.join(__dirname, "fonts", "sora-400.woff2")));
+    assert.ok(fs.existsSync(path.join(__dirname, "fonts", "ibm-plex-mono-400.woff2")));
+    assert.ok(!fs.existsSync(path.join(__dirname, "fonts", "chakra-petch-400.woff2")));
+  });
+
+  await test("shipped assets drop impeccable tokens", function () {
+    ["app.css", "index.html", "app.js", "core.js", "favicon.svg"].forEach(function (f) {
+      var src = fs.readFileSync(path.join(__dirname, f), "utf8");
+      ["#CC8800", "#cc8800", "#C55221", "#c55221", "#F4E6D4", "#f4e6d4", "Chakra Petch", "JetBrains Mono"].forEach(function (tok) {
+        assert.ok(src.indexOf(tok) === -1, f + " has " + tok);
+      });
+    });
   });
 
   console.log("\n" + passed + " passed, " + failed + " failed");

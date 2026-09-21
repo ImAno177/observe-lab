@@ -207,9 +207,9 @@
         if (!ctx) return { err: "no 2d" };
         ctx.textBaseline = "top";
         ctx.font = "16px Arial";
-        ctx.fillStyle = "#C55221";
+        ctx.fillStyle = "#0A4F4C";
         ctx.fillRect(0, 0, 240, 32);
-        ctx.fillStyle = "#111827";
+        ctx.fillStyle = "#1A2A32";
         ctx.fillText("Cwm fjordbank glyphs vext quiz", 2, 8);
         if (typeof c.toDataURL !== "function") return { err: "no toDataURL" };
         return { url: c.toDataURL() };
@@ -899,12 +899,12 @@
   }
 
   var PROTECTION = [
-    { mode: "real", note: "API returns the device value" },
-    { mode: "bucketed", note: "deviceMemory, some sizes rounded to a set" },
-    { mode: "randomized", note: "noise or farbling; value may change across sessions" },
-    { mode: "origin-partitioned", note: "storage / some IDs scoped to origin or top-level site" },
-    { mode: "permission", note: "mic, camera, precise location wait for a grant" },
-    { mode: "blocked", note: "API missing, throws, or extension withheld" }
+    { mode: "real", note: "device value" },
+    { mode: "bucketed", note: "rounded set" },
+    { mode: "randomized", note: "noise / farbling" },
+    { mode: "origin-partitioned", note: "origin-scoped" },
+    { mode: "permission", note: "needs a grant" },
+    { mode: "blocked", note: "missing / refused" }
   ];
 
   global.FP = {
