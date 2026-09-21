@@ -541,7 +541,7 @@ async function main() {
       assert.strictEqual(rec.learnedValue.connectedToDestination, true);
       assert.strictEqual(rec.learnedValue.gain, 0);
       assert.ok(FP.getAliExpressState().started);
-      assert.ok(/not a strong fingerprint/i.test(rec.tracking) || /do not treat/i.test(rec.tracking));
+      assert.ok(/weak/i.test(rec.tracking));
       FP.resetAliExpressForTests();
     });
   });
@@ -601,7 +601,11 @@ async function main() {
           assert.strictEqual(r.id, id);
           assert.ok(r.status === "Observed" || r.status === "Randomized" || r.status === "Inferred");
           assert.ok(r.codeExecuted);
-          assert.ok(String(r.network).indexOf("nothing left") >= 0 || r.network);
+          assert.ok(r.network);
+          assert.ok(String(r.network).length <= 8);
+          ["stability", "intervention", "tracking", "sideEffects", "network"].forEach(function (k) {
+            assert.ok(String(r[k]).split(/\s+/).length <= 5, id + " " + k + " " + r[k]);
+          });
         });
       });
     });
@@ -638,6 +642,7 @@ async function main() {
     assert.strictEqual(r.learnedValue.deviceMemory, 8);
     assert.ok(/bucket/i.test(r.intervention));
     assert.ok(!/unique/i.test(r.tracking));
+    assert.ok(r.intervention.split(/\s+/).length <= 3);
   });
 
   await test("snapshotFromResults marks blocked fields unavailable in diff", function () {
