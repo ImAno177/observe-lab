@@ -4,6 +4,7 @@
 
   var results = {};
   var lastSnap = null;
+  var activeId = null;
   var pointerTimer = null;
   var pointerEvents = [];
 
@@ -37,16 +38,16 @@
     var screen = s.screen[0] && s.screen[1] ? s.screen[0] + "×" + s.screen[1] : "—";
     var view = s.viewport[0] && s.viewport[1] ? s.viewport[0] + "×" + s.viewport[1] : "—";
     $("summary").innerHTML =
-      cell("browser", s.family) +
-      cell("screen", screen) +
-      cell("viewport", view) +
-      cell("dpr", dpr) +
-      cell("cores", cores) +
-      cell("memory", mem);
+      cell(s.family, "browser") +
+      cell(screen, "screen") +
+      cell(view, "viewport") +
+      cell(dpr, "dpr") +
+      cell(cores, "cores") +
+      cell(mem, "memory");
   }
 
-  function cell(k, v) {
-    return "<div><span>" + k + "</span><b>" + esc(v) + "</b></div>";
+  function cell(v, k) {
+    return "<div><b>" + esc(v) + "</b><span>" + k + "</span></div>";
   }
 
   var TITLES = {
@@ -74,8 +75,8 @@
   };
   var STATUS_GLOSS = {
     Observed: "API returned a value",
-    Inferred: "derived, not a direct read",
-    Randomized: "browser added noise",
+    Inferred: "not a direct read",
+    Randomized: "noise added",
     Blocked: "missing or refused",
     "Permission required": "needs a grant",
     Sent: "left this device"
@@ -85,55 +86,86 @@
     return FP.collectorIds()
       .map(function (id) {
         var r = results[id];
-        var st = r ? r.status : "—";
-        var statusChip = r ? chip(r.status) : '<span class="chip">idle</span>';
+        var statusChip = r ? chip(r.status) : "";
+        var on = id === activeId ? " is-on" : "";
         return (
-          '<div class="exp" data-id="' +
+          '<button type="button" class="exp' +
+          on +
+          '" data-id="' +
           id +
-          '"><div><strong>' +
-          esc(r ? r.title : TITLES[id] || id) +
-          "</strong><small>" +
+          '" data-run="' +
+          id +
+          '" aria-controls="detail" aria-expanded="' +
+          (id === activeId ? "true" : "false") +
+          '"><span class="exp-name">' +
+          esc(TITLES[id] || id) +
+          '</span><span class="exp-blurb">' +
           esc(BLURBS[id] || "") +
-          "</small></div>" +
+          "</span>" +
           statusChip +
-          '<button class="btn" data-run="' +
-          id +
-          '" type="button">Run</button></div>'
+          '<span class="exp-go">' +
+          (r ? "Again" : "Run") +
+          "</span></button>"
         );
       })
       .join("");
   }
 
+  function placeDetail() {
+    var d = $("detail");
+    if (!d) return;
+    if (!activeId || !results[activeId]) {
+      d.hidden = true;
+      return;
+    }
+    var row = document.querySelector('.exp[data-id="' + activeId + '"]');
+    if (row) row.after(d);
+    d.hidden = false;
+  }
+
   function renderList() {
-    $("list").innerHTML = listHtml();
+    var d = $("detail");
+    var list = $("list");
+    if (d && d.parentNode === list) list.parentNode.appendChild(d);
+    list.innerHTML = listHtml();
+    placeDetail();
   }
 
   function renderDetail(id) {
     var r = results[id];
     var el = $("detail");
+    activeId = id;
     if (!r) {
-      el.innerHTML = '<p class="empty">Run an experiment.</p>';
+      el.hidden = true;
+      el.innerHTML = "";
       return;
     }
     var rows = FP.DETAIL_FIELDS.map(function (k) {
+      var wide = k === "learned" || k === "codeExecuted";
       var val = r[k];
       var body =
         k === "learned" && r.learnedValue && typeof r.learnedValue === "object"
           ? "<pre>" + fmtLearned(r.learnedValue) + "</pre>"
           : "<div>" + fmtLearned(val) + "</div>";
-      return "<div><dt>" + esc(FP.DETAIL_LABELS[k]) + "</dt><dd>" + body + "</dd></div>";
+      return (
+        '<div' +
+        (wide ? ' class="wide"' : "") +
+        "><dt>" +
+        esc(FP.DETAIL_LABELS[k]) +
+        "</dt><dd>" +
+        body +
+        "</dd></div>"
+      );
     }).join("");
     el.innerHTML =
-      "<h2>" +
+      "<h3>" +
       esc(r.title) +
       " " +
       chip(r.status) +
-      "</h2><dl>" +
+      '</h3><dl class="sheet-grid">' +
       rows +
       "</dl>";
-    Array.prototype.forEach.call(document.querySelectorAll(".exp"), function (n) {
-      n.classList.toggle("is-on", n.getAttribute("data-id") === id);
-    });
+    renderList();
   }
 
   function env() {
@@ -150,11 +182,14 @@
 
   function run(id) {
     var btn = document.querySelector('[data-run="' + id + '"]');
-    if (btn) btn.disabled = true;
+    if (btn) {
+      btn.disabled = true;
+      var go = btn.querySelector(".exp-go");
+      if (go) go.textContent = "…";
+    }
     if (id === "pointer") startPointer();
     return FP.runCollector(id, env()).then(function (r) {
       results[id] = r;
-      renderList();
       renderDetail(id);
     });
   }
@@ -184,24 +219,21 @@
       var sum = FP.summarizePointerEvents(pointerEvents);
       r.learnedValue = Object.assign({}, r.learnedValue, sum);
       r.learned = JSON.stringify(r.learnedValue);
-      renderDetail("pointer");
-      renderList();
+      if (activeId === "pointer") renderDetail("pointer");
+      else renderList();
     }, 2500);
   }
 
   function renderLegend() {
-    var statuses = FP.STATUSES.map(function (s) {
-      return "<li>" + chip(s) + "<b>" + esc(STATUS_GLOSS[s] || "") + "</b></li>";
-    }).join("");
-    var modes = FP.PROTECTION.map(function (p) {
+    $("legend").innerHTML =
+      '<ul class="tax-grid">' +
+      FP.STATUSES.map(function (s) {
+        return "<li>" + chip(s) + "<b>" + esc(STATUS_GLOSS[s] || "") + "</b></li>";
+      }).join("") +
+      "</ul>";
+    $("modes").innerHTML = FP.PROTECTION.map(function (p) {
       return "<li><b>" + esc(p.mode) + "</b>" + esc(p.note) + "</li>";
     }).join("");
-    $("legend").innerHTML =
-      '<ul class="legend-grid">' +
-      statuses +
-      '</ul><p class="kicker" style="margin-top:24px">browser moves</p><ul class="legend-grid">' +
-      modes +
-      "</ul>";
   }
 
   function aliFacts(rec) {
@@ -246,21 +278,15 @@
 
     $("list").addEventListener("click", function (e) {
       var runBtn = e.target.closest("[data-run]");
-      var row = e.target.closest(".exp");
       if (runBtn) {
         e.preventDefault();
         run(runBtn.getAttribute("data-run"));
-        return;
       }
-      if (row) renderDetail(row.getAttribute("data-id"));
     });
 
     $("ali-start").addEventListener("click", function () {
       FP.startAliExpress(env()).then(function (rec) {
-        if (rec && rec.id) {
-          results.aliexpress = rec;
-          renderDetail("aliexpress");
-        }
+        if (rec && rec.id) results.aliexpress = rec;
         aliFacts(rec);
       });
     });
@@ -307,7 +333,7 @@
         return;
       }
       $("diff-out").innerHTML =
-        '<table class="diff"><thead><tr><th>field</th><th>state</th><th>a</th><th>b</th></tr></thead><tbody>' +
+        '<div class="sheet"><table class="diff"><thead><tr><th>field</th><th>state</th><th>a</th><th>b</th></tr></thead><tbody>' +
         rows
           .map(function (r) {
             return (
@@ -325,7 +351,7 @@
             );
           })
           .join("") +
-        "</tbody></table>";
+        "</tbody></table></div>";
     });
 
     $("net-preview").addEventListener("click", function () {
