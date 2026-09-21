@@ -40,7 +40,7 @@
   --focus: 2px solid var(--primary);
   --rail: 220px;
   --top: 72px;
-  --foot: 52px;
+  --foot: 88px;
 }
 
 *,
@@ -452,19 +452,23 @@ textarea {
 
 .legend {
   display: flex;
-  flex-wrap: nowrap;
-  gap: 8px 16px;
-  align-items: center;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
   height: var(--foot);
-  padding: 0 var(--space-5);
+  padding: 8px var(--space-5);
   background: var(--secondary);
   color: var(--cream);
-  overflow-x: auto;
+  overflow: hidden;
 }
 .legend ul {
-  display: contents;
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 16px;
   margin: 0;
   padding: 0;
+  overflow-x: auto;
+  width: 100%;
 }
 .legend li {
   list-style: none;
