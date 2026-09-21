@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>OBSERVE — what this origin can read</title>
+    <meta name="description" content="Local-only demo of browser fingerprint signals. No score. No upload." />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="./app.css" />
+  </head>
+  <body>
+    <a class="skip" href="#ex-title">Skip to experiments</a>
+    <p id="file-hint" class="file-hint" hidden>
+      file: origin — use a static server or GitHub Pages if something fails to load.
+    </p>
+
+    <header class="band band-orange">
+      <div class="wrap">
+        <div class="mast">
+          <div>
+            <p class="kicker">local-only · no score</p>
+            <h1>OBSERVE</h1>
+            <p class="lede">What this origin can read. Inference is labeled. Nothing is sent.</p>
+          </div>
+          <div class="mast-side">
+            <span class="pill">0 B sent</span>
+            <nav class="toc" aria-label="On this page">
+              <a href="#ex-title">Experiments</a>
+              <a href="#aliexpress">Silent graph</a>
+              <a href="#diff-title">Diff</a>
+            </nav>
+          </div>
+        </div>
+        <div class="meter" id="summary"></div>
+        <div class="tax" id="legend"></div>
+      </div>
+    </header>
+
+    <main>
+      <section class="band band-cream" aria-labelledby="ex-title">
+        <div class="wrap">
+          <p class="kicker">catalog</p>
+          <h2 id="ex-title">Experiments</h2>
+          <p class="hint">Each row runs that API only. Details open under it.</p>
+          <div class="catalog" id="list"></div>
+          <article class="sheet" id="detail" hidden aria-live="polite"></article>
+        </div>
+      </section>
+
+      <section class="band band-orange" aria-labelledby="ali-title" id="aliexpress">
+        <div class="wrap">
+          <p class="kicker">case · Aug 2026</p>
+          <h2 id="ali-title">Silent WebAudio graph</h2>
+          <p class="lede">No autoplay. Gain is zero. Destination stays connected — may wake audio or Bluetooth.</p>
+          <ol class="chain" aria-label="oscillator to destination">
+            <li>oscillator</li>
+            <li>analyser</li>
+            <li>processor</li>
+            <li class="gain">gain = 0</li>
+            <li>destination</li>
+          </ol>
+          <div class="btn-row">
+            <button class="btn" id="ali-start" type="button">Start</button>
+            <button class="btn btn-ghost" id="ali-stop" type="button" disabled>Stop</button>
+          </div>
+          <dl class="facts" id="ali-facts">
+            <div><dt>audible</dt><dd id="ali-audible">—</dd></div>
+            <div><dt>context</dt><dd id="ali-ctx">idle</dd></div>
+            <div><dt>destination</dt><dd id="ali-dest">disconnected</dd></div>
+            <div><dt>entropy</dt><dd id="ali-ent">untested</dd></div>
+          </dl>
+        </div>
+      </section>
+
+      <section class="band band-cream" aria-labelledby="diff-title">
+        <div class="wrap split">
+          <div>
+            <p class="kicker">local</p>
+            <h2 id="diff-title">Fingerprint diff</h2>
+            <div class="btn-row">
+              <button class="btn" id="snap-capture" type="button">Capture</button>
+              <button class="btn btn-ghost" id="snap-compare" type="button">Compare</button>
+            </div>
+            <p class="hint">Reload, resize, or paste another browser / private mode.</p>
+            <label class="sr" for="snap-paste">Paste snapshot</label>
+            <textarea id="snap-paste" placeholder='{"ts":…,"fields":{…}}'></textarea>
+          </div>
+          <div id="diff-out">
+            <p class="empty">Capture, then Compare.</p>
+          </div>
+        </div>
+        <div class="wrap net-block">
+          <p class="kicker">inspector</p>
+          <h2 id="net-title">Network</h2>
+          <div class="btn-row">
+            <button class="btn btn-ghost" id="net-preview" type="button">Preview opt-in payload</button>
+          </div>
+          <pre id="net-out">0 bytes left this device</pre>
+        </div>
+      </section>
+
+      <section class="band band-orange" aria-labelledby="prot-title">
+        <div class="wrap">
+          <p class="kicker">browser moves</p>
+          <h2 id="prot-title">How engines intervene</h2>
+          <ul class="modes" id="modes"></ul>
+        </div>
+      </section>
+    </main>
+
+    <script src="./core.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
